@@ -135,6 +135,10 @@ export class MeetingRoomComponent implements OnInit, OnDestroy {
     this.chatInput = '';
   }
 
+  toggleParticipants() {
+    this.showParticipants.update((v) => !v);
+  }
+
   toggleChat() {
     this.showChat.update((v) => !v);
     if (this.showChat()) {

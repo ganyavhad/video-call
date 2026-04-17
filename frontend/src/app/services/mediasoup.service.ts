@@ -1,6 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 import { Device } from 'mediasoup-client';
-import { Transport, Producer, Consumer } from 'mediasoup-client/lib/types';
+import { Transport, Producer, Consumer } from 'mediasoup-client/types';
 import { Subject } from 'rxjs';
 import { SocketService } from './socket.service';
 import { Participant, ChatMessage } from '../models/participant.model';
@@ -76,7 +76,7 @@ export class MediasoupService {
 
     this.sendTransport = this.device.createSendTransport(params);
 
-    this.sendTransport.on('connect', async ({ dtlsParameters }, callback, errback) => {
+    this.sendTransport.on('connect', async ({ dtlsParameters }, callback, errback: (err: Error) => void) => {
       try {
         await this.socket.emitWithAck('connect-transport', {
           roomId,
@@ -87,7 +87,7 @@ export class MediasoupService {
       } catch (e: any) { errback(e); }
     });
 
-    this.sendTransport.on('produce', async ({ kind, rtpParameters, appData }, callback, errback) => {
+    this.sendTransport.on('produce', async ({ kind, rtpParameters, appData }, callback, errback: (err: Error) => void) => {
       try {
         const { producerId, error: err } = await this.socket.emitWithAck<any>('produce', {
           roomId,
@@ -111,7 +111,7 @@ export class MediasoupService {
 
     this.recvTransport = this.device.createRecvTransport(params);
 
-    this.recvTransport.on('connect', async ({ dtlsParameters }, callback, errback) => {
+    this.recvTransport.on('connect', async ({ dtlsParameters }, callback, errback: (err: Error) => void) => {
       try {
         await this.socket.emitWithAck('connect-transport', {
           roomId,

@@ -101,7 +101,7 @@
           </li>
           @for (p of participantList(); track p.socketId) {
             <li class="participant-item">
-              <div class="p-avatar">{{ p.displayName?.[0]?.toUpperCase() }}</div>
+              <div class="p-avatar">{{ p.displayName[0]?.toUpperCase() }}</div>
               <span>{{ p.displayName }}</span>
               @if (p.isMuted) { <span title="Muted">&#128263;</span> }
               @if (p.isVideoOff) { <span title="Video off">&#128247;&#65039;</span> }
@@ -164,7 +164,7 @@
 
       <!-- Participants -->
       <button class="ctrl-btn-icon" [class.active]="showParticipants()"
-        (click)="showParticipants.update(v => !v)" title="Participants">
+        (click)="toggleParticipants()" title="Participants">
         &#128101;
       </button>
     </div>

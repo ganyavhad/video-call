@@ -3,6 +3,8 @@ const jwt = require('jsonwebtoken');
 const { query } = require('../config/database');
 const { validationResult } = require('express-validator');
 
+const logger = require('../utils/logger');
+
 const SALT_ROUNDS = 12;
 
 function generateTokens(user) {
@@ -46,6 +48,7 @@ async function register(req, res) {
 
     res.status(201).json({ user, accessToken, refreshToken });
   } catch (err) {
+    logger.error('register error', { message: err.message, stack: err.stack });
     res.status(500).json({ error: 'Registration failed' });
   }
 }

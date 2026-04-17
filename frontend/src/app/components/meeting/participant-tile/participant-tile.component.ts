@@ -15,7 +15,7 @@ import { Participant } from '../../../models/participant.model';
 
       @if (participant.isVideoOff) {
         <div class="avatar-placeholder">
-          {{ participant.displayName?.[0]?.toUpperCase() }}
+          {{ participant.displayName[0]?.toUpperCase() }}
         </div>
       }
 
