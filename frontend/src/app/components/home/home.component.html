@@ -1,0 +1,135 @@
+<div class="home-page">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">&#127909; ZoomClone</div>
+    <nav class="sidebar-nav">
+      <button class="nav-item" [class.active]="activeTab() === 'home'" (click)="activeTab.set('home')">
+        &#127968; Home
+      </button>
+      <button class="nav-item" [class.active]="activeTab() === 'rooms'" (click)="activeTab.set('rooms')">
+        &#128250; My Rooms
+      </button>
+    </nav>
+    <div class="sidebar-user">
+      <div class="avatar">{{ user()?.name?.[0]?.toUpperCase() }}</div>
+      <div class="user-info">
+        <span class="name">{{ user()?.name }}</span>
+        <span class="email">{{ user()?.email }}</span>
+      </div>
+      <button class="btn btn-ghost btn-sm" (click)="logout()">Logout</button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main-content">
+    @if (activeTab() === 'home') {
+      <section class="hero fade-in">
+        <h1>Start or join a meeting</h1>
+        <p>Connect with up to 30+ participants with crystal-clear HD video</p>
+
+        <div class="action-cards">
+          <div class="action-card" (click)="startNewMeeting()">
+            <div class="icon new-meeting">&#127909;</div>
+            <h3>New Meeting</h3>
+            <p>Start an instant meeting</p>
+          </div>
+
+          <div class="action-card join-card">
+            <div class="icon join">&#128279;</div>
+            <h3>Join Meeting</h3>
+            <div class="join-input">
+              <input
+                type="text"
+                placeholder="Enter room code (ABC-DEF-GHI)"
+                [value]="joinCode()"
+                (input)="joinCode.set($any($event.target).value)"
+                (keyup.enter)="joinByCode()"
+                maxlength="11"
+              />
+              <button class="btn btn-primary" (click)="joinByCode()" [disabled]="!joinCode()">
+                Join
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    }
+
+    @if (activeTab() === 'rooms') {
+      <section class="rooms-section fade-in">
+        <div class="section-header">
+          <h2>My Rooms</h2>
+          <button class="btn btn-primary" (click)="startNewMeeting()">+ New Room</button>
+        </div>
+
+        @if (rooms().length === 0) {
+          <div class="empty-state">
+            <p>&#128250; No rooms yet. Create your first meeting room!</p>
+          </div>
+        } @else {
+          <div class="rooms-grid">
+            @for (room of rooms(); track room.id) {
+              <div class="room-card card">
+                <div class="room-header">
+                  <h3>{{ room.name }}</h3>
+                  <span class="badge badge-green">Active</span>
+                </div>
+                <p class="room-desc">{{ room.description || 'No description' }}</p>
+                <div class="room-code">
+                  <code>{{ room.room_code }}</code>
+                  <button class="btn btn-ghost btn-sm" (click)="copyCode(room.room_code)" title="Copy code">
+                    &#128203;
+                  </button>
+                </div>
+                <div class="room-meta">
+                  <span>Max {{ room.max_participants }} participants</span>
+                </div>
+                <div class="room-actions">
+                  <button class="btn btn-primary btn-sm" (click)="joinRoom(room.id)">Start</button>
+                  <button class="btn btn-danger btn-sm" (click)="deleteRoom(room.id)">Delete</button>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </section>
+    }
+  </main>
+</div>
+
+<!-- Create Room Modal -->
+@if (showCreateModal()) {
+  <div class="modal-overlay" (click)="showCreateModal.set(false)">
+    <div class="modal card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Create New Meeting Room</h2>
+        <button class="btn-close" (click)="showCreateModal.set(false)">&#10005;</button>
+      </div>
+
+      @if (createError()) {
+        <div class="alert alert-danger">{{ createError() }}</div>
+      }
+
+      <form [formGroup]="createForm" (ngSubmit)="createRoom()">
+        <div class="form-group">
+          <label>Room Name *</label>
+          <input type="text" formControlName="name" placeholder="Team Standup" />
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <input type="text" formControlName="description" placeholder="Optional description" />
+        </div>
+        <div class="form-group">
+          <label>Max Participants</label>
+          <input type="number" formControlName="maxParticipants" min="2" max="200" />
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" (click)="showCreateModal.set(false)">Cancel</button>
+          <button type="submit" class="btn btn-primary" [disabled]="loading() || createForm.invalid">
+            @if (loading()) { Creating... } @else { Create & Join }
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

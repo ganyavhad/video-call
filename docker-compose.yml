@@ -1,0 +1,65 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: videocall_postgres
+    environment:
+      POSTGRES_DB: videocall_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres_secret
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: videocall_backend
+    environment:
+      PORT: 3000
+      NODE_ENV: production
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: videocall_db
+      DB_USER: postgres
+      DB_PASSWORD: postgres_secret
+      JWT_SECRET: change_this_to_a_very_long_random_secret_32chars
+      JWT_EXPIRES_IN: 1h
+      JWT_REFRESH_SECRET: change_this_refresh_secret_32chars_minimum
+      JWT_REFRESH_EXPIRES_IN: 7d
+      FRONTEND_URL: http://localhost:4200
+      MEDIASOUP_LISTEN_IP: 0.0.0.0
+      MEDIASOUP_ANNOUNCED_IP: 127.0.0.1
+      MEDIASOUP_MIN_PORT: 10000
+      MEDIASOUP_MAX_PORT: 10100
+    ports:
+      - "3000:3000"
+      - "10000-10100:10000-10100/udp"
+      - "10000-10100:10000-10100/tcp"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: videocall_frontend
+    ports:
+      - "4200:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

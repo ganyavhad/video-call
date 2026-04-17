@@ -1,0 +1,50 @@
+<div class="auth-page">
+  <div class="auth-card card fade-in">
+    <div class="auth-header">
+      <div class="logo">&#127909;</div>
+      <h1>Welcome back</h1>
+      <p>Sign in to your ZoomClone account</p>
+    </div>
+
+    @if (errorMsg()) {
+      <div class="alert alert-danger">{{ errorMsg() }}</div>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input
+          id="email"
+          type="email"
+          formControlName="email"
+          placeholder="you@example.com"
+          autocomplete="email"
+          [class.error]="form.get('email')?.invalid && form.get('email')?.touched"
+        />
+        @if (form.get('email')?.invalid && form.get('email')?.touched) {
+          <span class="error-msg">Valid email is required</span>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input
+          id="password"
+          type="password"
+          formControlName="password"
+          placeholder="••••••••"
+          autocomplete="current-password"
+          [class.error]="form.get('password')?.invalid && form.get('password')?.touched"
+        />
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-lg w-full" [disabled]="loading()">
+        @if (loading()) { Signing in... } @else { Sign In }
+      </button>
+    </form>
+
+    <p class="auth-footer">
+      Don't have an account? <a routerLink="/register">Create one</a>
+    </p>
+  </div>
+</div>

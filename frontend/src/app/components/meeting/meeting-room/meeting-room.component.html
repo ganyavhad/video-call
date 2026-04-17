@@ -1,0 +1,173 @@
+<!-- Loading / Error -->
+@if (joining()) {
+  <div class="loading-screen">
+    <div class="spinner"></div>
+    <p>Joining meeting...</p>
+  </div>
+}
+
+@if (error()) {
+  <div class="error-screen">
+    <p>&#9888; {{ error() }}</p>
+    <button class="btn btn-primary" routerLink="/home">Back to Home</button>
+  </div>
+}
+
+@if (!joining() && !error()) {
+<div class="meeting-room">
+
+  <!-- ── Top Bar ─────────────────────────────────────────────── -->
+  <header class="top-bar">
+    <div class="meeting-info">
+      <span class="room-name">{{ room()?.name }}</span>
+      <span class="timer">{{ elapsedTime() }}</span>
+      @if (room()?.room_code) {
+        <span class="room-code-badge">{{ room()?.room_code }}</span>
+      }
+    </div>
+    <div class="participant-count">
+      <span>&#128100; {{ participantList().length + 1 }} participants</span>
+    </div>
+  </header>
+
+  <!-- ── Video Grid ──────────────────────────────────────────── -->
+  <div class="content-area" [class.with-sidebar]="showChat() || showParticipants()">
+    <div class="video-grid" [attr.data-count]="participantList().length + 1">
+
+      <!-- Local Video -->
+      <div class="video-tile local-tile" [class.video-off]="isVideoOff()">
+        <video #localVideo autoplay muted playsinline [class.hidden]="isVideoOff()"></video>
+        @if (isVideoOff()) {
+          <div class="avatar-placeholder">
+            {{ user()?.name?.[0]?.toUpperCase() }}
+          </div>
+        }
+        <div class="tile-info">
+          <span class="name">{{ user()?.name }} (You)</span>
+          @if (isMuted()) { <span class="mute-icon">&#128263;</span> }
+        </div>
+      </div>
+
+      <!-- Remote Participants -->
+      @for (participant of participantList(); track participant.socketId) {
+        <app-participant-tile [participant]="participant" />
+      }
+    </div>
+
+    <!-- ── Chat Sidebar ──────────────────────────────────── -->
+    @if (showChat()) {
+      <aside class="chat-sidebar">
+        <div class="chat-header">
+          <h3>Meeting Chat</h3>
+          <button class="btn-close" (click)="toggleChat()">&#10005;</button>
+        </div>
+        <div class="messages">
+          @for (msg of chatMessages(); track msg.timestamp) {
+            <div class="message" [class.own]="msg.userId === user()?.id">
+              <span class="msg-author">{{ msg.displayName }}</span>
+              <p class="msg-text">{{ msg.message }}</p>
+              <span class="msg-time">{{ msg.timestamp | date:'HH:mm' }}</span>
+            </div>
+          }
+          @if (chatMessages().length === 0) {
+            <p class="no-messages">No messages yet. Say hello!</p>
+          }
+        </div>
+        <div class="chat-input">
+          <input
+            type="text"
+            [(ngModel)]="chatInput"
+            placeholder="Type a message..."
+            (keyup.enter)="sendChat()"
+            maxlength="2000"
+          />
+          <button class="btn btn-primary btn-sm" (click)="sendChat()">Send</button>
+        </div>
+      </aside>
+    }
+
+    <!-- ── Participants Sidebar ──────────────────────────── -->
+    @if (showParticipants()) {
+      <aside class="participants-sidebar">
+        <div class="chat-header">
+          <h3>Participants ({{ participantList().length + 1 }})</h3>
+          <button class="btn-close" (click)="showParticipants.set(false)">&#10005;</button>
+        </div>
+        <ul class="participant-list">
+          <li class="participant-item">
+            <div class="p-avatar">{{ user()?.name?.[0]?.toUpperCase() }}</div>
+            <span>{{ user()?.name }} <em>(You)</em></span>
+            @if (isMuted()) { <span title="Muted">&#128263;</span> }
+          </li>
+          @for (p of participantList(); track p.socketId) {
+            <li class="participant-item">
+              <div class="p-avatar">{{ p.displayName?.[0]?.toUpperCase() }}</div>
+              <span>{{ p.displayName }}</span>
+              @if (p.isMuted) { <span title="Muted">&#128263;</span> }
+              @if (p.isVideoOff) { <span title="Video off">&#128247;&#65039;</span> }
+            </li>
+          }
+        </ul>
+      </aside>
+    }
+  </div>
+
+  <!-- ── Controls Bar ────────────────────────────────────── -->
+  <footer class="controls-bar">
+    <div class="controls-left">
+      <span class="ctrl-label">{{ elapsedTime() }}</span>
+    </div>
+
+    <div class="controls-center">
+      <!-- Mute -->
+      <button
+        class="ctrl-btn" [class.active]="isMuted()" [class.danger]="isMuted()"
+        (click)="toggleAudio()" title="{{ isMuted() ? 'Unmute' : 'Mute' }}"
+      >
+        {{ isMuted() ? '&#128263;' : '&#127908;' }}
+        <span>{{ isMuted() ? 'Unmute' : 'Mute' }}</span>
+      </button>
+
+      <!-- Video -->
+      <button
+        class="ctrl-btn" [class.danger]="isVideoOff()"
+        (click)="toggleVideo()" title="{{ isVideoOff() ? 'Start Video' : 'Stop Video' }}"
+      >
+        {{ isVideoOff() ? '&#128247;&#65039;' : '&#128249;' }}
+        <span>{{ isVideoOff() ? 'Start Video' : 'Stop Video' }}</span>
+      </button>
+
+      <!-- Screen Share -->
+      <button
+        class="ctrl-btn" [class.active]="isScreenSharing()"
+        (click)="toggleScreenShare()" title="Screen Share"
+      >
+        &#128421;
+        <span>{{ isScreenSharing() ? 'Stop Share' : 'Share Screen' }}</span>
+      </button>
+
+      <!-- Leave -->
+      <button class="ctrl-btn leave" (click)="leaveMeeting()" title="Leave meeting">
+        &#128241;
+        <span>Leave</span>
+      </button>
+    </div>
+
+    <div class="controls-right">
+      <!-- Chat -->
+      <button class="ctrl-btn-icon" [class.active]="showChat()" (click)="toggleChat()" title="Chat">
+        &#128172;
+        @if (unreadCount() > 0) {
+          <span class="badge-dot">{{ unreadCount() }}</span>
+        }
+      </button>
+
+      <!-- Participants -->
+      <button class="ctrl-btn-icon" [class.active]="showParticipants()"
+        (click)="showParticipants.update(v => !v)" title="Participants">
+        &#128101;
+      </button>
+    </div>
+  </footer>
+</div>
+}
